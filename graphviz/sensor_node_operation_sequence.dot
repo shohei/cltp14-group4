@@ -1,0 +1,49 @@
+digraph OperationSequence {
+    rankdir = TB;
+    splines = ortho;
+    ranksep=0.1; 
+    nodesep=0.2;
+    node [fontname = "Helvetica"; fontsize = 10; shape = box; style = rounded;];
+    
+    Start [shape = ellipse;label = "Start";];
+    Init [label = "Initialize MCU & Radio";];
+    Wake [label = "Wake / Timer Interrupt";width = 2.5;];
+    ReadTemp [label = "Read Temperature";];
+    ReadHum [label = "Read Humidity";];
+    ReadOther [label = "Read Other Sensors";];
+    Aggregate [label = "Aggregate & Timestamp";width = 3.5;];
+    // wider rectangle
+    Filter [label = "Filter / Calibrate";];
+    DataReady [shape = diamond;label = "Data Ready to Send?";];
+    Prepare [label = "Prepare Packet\n(encode/compress)";];
+    Transmit [label = "Transmit (Wireless Radio)";];
+    Sleep [label = "Sleep / Low Power Mode";];
+    End [shape = ellipse;label = "End / Shutdown";];
+    
+    subgraph {
+        rank = same;
+        ReadTemp;
+        ReadHum;
+        ReadOther;
+    }
+    
+    Start -> Init -> Wake;
+    Wake -> ReadTemp;
+    Wake -> ReadHum;
+    Wake -> ReadOther;
+    
+    ReadTemp:s -> Aggregate:n;
+    ReadHum:s -> Aggregate:n;
+    ReadOther:s -> Aggregate:n;
+    
+    Aggregate -> Filter -> DataReady;
+    DataReady -> Prepare [label = "Yes";];
+    DataReady -> Sleep [label = "No";];
+    
+    Prepare -> Transmit -> Sleep;
+    
+    Sleep -> Wake [label = "Timer / Event";];
+    Sleep -> End [label = "Low Battery";];
+    
+    edge [fontsize = 12;];
+}
